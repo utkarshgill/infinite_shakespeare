@@ -3,7 +3,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-mps_device = torch.device("mps")
+mps_device = torch.device("cpu") 
+
+if torch.cuda.is_available():
+    torch.device("cuda")
+elif torch.backends.mps.is_available():
+    torch.device("mps")
+else torch.device("cpu") 
+
+# hyper param
 batch_size = 32
 block_size = 256
 n_embd = 384
