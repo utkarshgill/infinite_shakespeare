@@ -3,7 +3,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-mps_device = torch.device("mps")
+mps_device = torch.device("cpu") 
+
+if torch.cuda.is_available():
+    torch.device("cuda")
+elif torch.backends.mps.is_available():
+    torch.device("mps")
+else:
+    torch.device("cpu") 
+
+# hyper param
 batch_size = 32
 block_size = 256
 n_embd = 384
@@ -34,9 +43,7 @@ class Head(nn.Module):
         self.key = nn.Linear(n_embd, head_size, bias=False, device=mps_device)
         self.query = nn.Linear(n_embd, head_size, bias=False, device=mps_device)
         self.value = nn.Linear(n_embd, head_size, bias=False, device=mps_device)
-        self.register_buffer(
-            "tril", torch.tril(torch.ones(block_size, block_size, device=mps_device))
-        )
+        self.register_buffer("tril", torch.tril(torch.ones(block_size, block_size, device=mps_device))) 
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
@@ -97,8 +104,8 @@ class Block(nn.Module):
         return x
 
 
-class BigramLanguageModel(nn.Module):
-    def __init__(self):
+class GPT(nn.Module):
+    def __init__(self, vocab_size, n_embd, n_head, n_layer):
         super().__init__()
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd, device=mps_device)
         self.position_embedding_table = nn.Embedding(
@@ -112,7 +119,6 @@ class BigramLanguageModel(nn.Module):
 
     def forward(self, idx, targets=None):
         B, T = idx.shape
-
         tok_emb = self.token_embedding_table(idx)
         pos_emb = self.position_embedding_table(torch.arange(T, device=mps_device))
         x = tok_emb + pos_emb
@@ -142,7 +148,7 @@ class BigramLanguageModel(nn.Module):
         return idx
 
 
-model = BigramLanguageModel()
+model = GPT(vocab_size, n_embd, n_head, n_layer)
 model.to(mps_device)
 
 
@@ -158,5 +164,5 @@ params_path = os.path.join(load_dir, params_filename)
 model_state_dict = torch.load(params_path)
 model.load_state_dict(model_state_dict)
 model.eval()
-
+# print(sum(p.numel() for p in model.parameters()))
 model.generate(idx=torch.zeros((1, 1), dtype=torch.long, device= mps_device), max_new_tokens=10000)
