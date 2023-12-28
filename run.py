@@ -9,7 +9,9 @@ if torch.cuda.is_available():
     torch.device("cuda")
 elif torch.backends.mps.is_available():
     torch.device("mps")
-else torch.device("cpu") 
+else:
+    torch.device("cpu") 
+
 
 # hyper param
 batch_size = 32
@@ -42,9 +44,7 @@ class Head(nn.Module):
         self.key = nn.Linear(n_embd, head_size, bias=False, device=mps_device)
         self.query = nn.Linear(n_embd, head_size, bias=False, device=mps_device)
         self.value = nn.Linear(n_embd, head_size, bias=False, device=mps_device)
-        self.register_buffer(
-            "tril", torch.tril(torch.ones(block_size, block_size, device=mps_device))
-        )
+        self.register_buffer("tril", torch.tril(torch.ones(block_size, block_size, device=mps_device))) 
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
@@ -105,8 +105,8 @@ class Block(nn.Module):
         return x
 
 
-class BigramLanguageModel(nn.Module):
-    def __init__(self):
+class GPT(nn.Module):
+    def __init__(self, vocab_size, n_embd, n_head, n_layer):
         super().__init__()
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd, device=mps_device)
         self.position_embedding_table = nn.Embedding(
@@ -120,7 +120,6 @@ class BigramLanguageModel(nn.Module):
 
     def forward(self, idx, targets=None):
         B, T = idx.shape
-
         tok_emb = self.token_embedding_table(idx)
         pos_emb = self.position_embedding_table(torch.arange(T, device=mps_device))
         x = tok_emb + pos_emb
@@ -150,7 +149,7 @@ class BigramLanguageModel(nn.Module):
         return idx
 
 
-model = BigramLanguageModel()
+model = GPT(vocab_size, n_embd, n_head, n_layer)
 model.to(mps_device)
 
 
