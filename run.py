@@ -12,6 +12,7 @@ elif torch.backends.mps.is_available():
 else:
     torch.device("cpu") 
 
+
 # hyper param
 batch_size = 32
 block_size = 256
@@ -164,5 +165,5 @@ params_path = os.path.join(load_dir, params_filename)
 model_state_dict = torch.load(params_path)
 model.load_state_dict(model_state_dict)
 model.eval()
-# print(sum(p.numel() for p in model.parameters()))
+
 model.generate(idx=torch.zeros((1, 1), dtype=torch.long, device= mps_device), max_new_tokens=10000)
